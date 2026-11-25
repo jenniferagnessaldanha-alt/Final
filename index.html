@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Workshop Feedback Collector</title>
+  <meta name="description" content="Share feedback on a technical workshop. Organisers can view the summary with a PIN.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<style>
+    :root {
+  --ink: #1d1442;
+  --muted: #62597f;
+  --line: #ddd6f3;
+  --soft: #f4f0ff;
+  --violet: #5b2bd9;
+  --violet-dark: #3a1a9c;
+  --pink: #ff4fa3;
+  --teal: #12b8a6;
+  --gold: #ffc531;
+  --star-off: #d3cbea;
+  --danger: #c0262d;
+  --radius: 20px;
+  --shadow: 0 10px 30px rgba(29, 20, 66, .22);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Work Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 12% 8%, rgba(255, 79, 163, .55), transparent 40%),
+    radial-gradient(circle at 90% 22%, rgba(18, 184, 166, .45), transparent 38%),
+    radial-gradient(circle at 50% 100%, rgba(255, 140, 80, .5), transparent 45%),
+    linear-gradient(160deg, #2a1470 0%, #5b2bd9 55%, #8e3cd6 100%);
+  background-attachment: fixed;
+}
+
+h1, h2, h3 { font-family: "Bricolage Grotesque", "Work Sans", system-ui, sans-serif; line-height: 1.15; margin: 0; }
+
+.wrap { width: min(760px, 100% - 2rem); margin-inline: auto; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.skip { position: absolute; left: -999px; top: 0; background: #fff; color: var(--ink); padding: .5rem .8rem; z-index: 100; }
+.skip:focus { left: 0; }
+
+/* Hero */
+.hero { color: #fff; text-align: center; padding: 3rem 0 1.75rem; }
+.hero h1 { font-size: clamp(2.1rem, 6vw, 3.4rem); font-weight: 800; letter-spacing: -.015em; text-shadow: 0 3px 18px rgba(0, 0, 0, .25); }
+.tagline { margin: .7rem auto 0; max-width: 46ch; color: #eadfff; font-size: 1.05rem; }
+
+.main { display: grid; gap: 1.5rem; padding-bottom: 1rem; }
+
+/* Cards */
+.card {
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 1.75rem;
+  box-shadow: var(--shadow);
+}
+.card h2 { font-size: 1.45rem; font-weight: 600; margin-bottom: 1.2rem; }
+.card h3 { font-size: 1.15rem; font-weight: 600; }
+
+/* Form */
+.field { margin: 0 0 1.3rem; padding: 0; border: 0; min-width: 0; }
+label, legend { display: block; font-weight: 600; font-size: .95rem; margin-bottom: .4rem; padding: 0; }
+.req { color: var(--pink); }
+
+input[type="text"], input[type="password"], textarea, select {
+  width: 100%;
+  font: inherit; color: inherit;
+  background: #fff;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  padding: .7rem .9rem;
+  transition: border-color .15s, box-shadow .15s, background .15s;
+}
+input:disabled { background: #f1eefa; color: var(--muted); cursor: not-allowed; }
+input.invalid, textarea.invalid { border-color: var(--danger); }
+:focus-visible { outline: 3px solid #b7a2ff; outline-offset: 2px; }
+input[type="text"]:focus, input[type="password"]:focus, textarea:focus, select:focus {
+  border-color: var(--violet); outline: none; box-shadow: 0 0 0 4px rgba(91, 43, 217, .18);
+}
+
+/* Comment box */
+textarea {
+  display: block;
+  min-height: 9rem;
+  max-height: 22rem;
+  resize: vertical;
+  line-height: 1.6;
+  font-size: 1.02rem;
+  padding: 1rem 1.1rem;
+  background: var(--soft);
+  border-color: transparent;
+}
+textarea::placeholder { color: #8a80ad; }
+textarea:focus { background: #fff; }
+
+.chips { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: .6rem; }
+.chip {
+  font: inherit; font-size: .85rem; cursor: pointer;
+  background: var(--soft); color: var(--violet-dark);
+  border: 1.5px solid transparent; border-radius: 999px; padding: .3rem .8rem;
+  transition: background .15s, border-color .15s, transform .1s;
+}
+.chip:hover { border-color: var(--violet); background: #fff; }
+.chip:active { transform: scale(.96); }
+
+.check { display: flex; gap: .55rem; align-items: center; font-weight: 400; margin: .7rem 0 0; cursor: pointer; }
+.check input { width: 1.15rem; height: 1.15rem; accent-color: var(--violet); }
+
+.error { color: var(--danger); font-size: .86rem; margin: .4rem 0 0; }
+.error:empty { display: none; }
+.field-foot { display: flex; justify-content: space-between; gap: .75rem; align-items: flex-start; }
+.counter { font-size: .82rem; color: var(--muted); margin-top: .4rem; white-space: nowrap; margin-left: auto; }
+.counter.near { color: var(--danger); font-weight: 600; }
+
+/* Rating */
+.rating-row { display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; }
+.stars { position: relative; display: inline-flex; flex-direction: row-reverse; justify-content: flex-end; gap: .2rem; }
+.stars input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.stars label {
+  margin: 0; cursor: pointer; font-size: 2.7rem; line-height: 1;
+  color: var(--star-off); transition: color .12s, transform .12s;
+  display: inline-block;
+}
+.stars label::before { content: "\2605"; }
+.stars label:hover,
+.stars label:hover ~ label { color: #ffd965; transform: scale(1.12); }
+.stars input:checked ~ label {
+  color: var(--gold);
+  text-shadow: 0 0 14px rgba(255, 197, 49, .85), 0 0 3px rgba(255, 150, 0, .7);
+}
+.stars input:focus-visible + label { outline: 3px solid #b7a2ff; outline-offset: 3px; border-radius: 6px; }
+.stars label.pop { animation: starPop .55s ease both; }
+
+@keyframes starPop {
+  0%   { transform: scale(1) rotate(0); }
+  35%  { transform: scale(1.7) rotate(-14deg); }
+  65%  { transform: scale(.88) rotate(6deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+
+.spark {
+  position: absolute; pointer-events: none; z-index: 5;
+  color: var(--gold); font-size: .9rem; line-height: 1;
+  text-shadow: 0 0 8px rgba(255, 197, 49, .9);
+  animation: sparkFly .8s ease-out forwards;
+}
+@keyframes sparkFly {
+  0%   { transform: translate(-50%, -50%) scale(.3) rotate(0); opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.3) rotate(200deg); opacity: 0; }
+}
+
+.rating-badge {
+  display: flex; align-items: center; gap: .65rem;
+  background: var(--soft); border-radius: 999px; padding: .35rem 1.1rem .35rem .4rem;
+  min-width: 11.5rem;
+}
+.rb-num {
+  display: grid; place-items: center; width: 2.9rem; height: 2.9rem; border-radius: 50%;
+  background: var(--star-off); color: #fff;
+  font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: 1.6rem;
+  transition: background .2s;
+}
+.rb-word { font-weight: 600; color: var(--violet-dark); }
+.rating-badge.has-rating .rb-num { background: linear-gradient(135deg, var(--pink), var(--violet)); box-shadow: 0 4px 14px rgba(91, 43, 217, .4); }
+.rating-badge.bump .rb-num { animation: badgePop .5s ease; }
+@keyframes badgePop {
+  0% { transform: scale(.4); }
+  55% { transform: scale(1.4); }
+  100% { transform: scale(1); }
+}
+
+/* Buttons */
+.btn {
+  font: inherit; font-weight: 600; cursor: pointer;
+  border-radius: 12px; padding: .7rem 1.2rem; border: 2px solid transparent;
+  transition: background .15s, border-color .15s, transform .08s, box-shadow .15s;
+}
+.btn:active { transform: translateY(1px); }
+.btn-primary {
+  background: linear-gradient(135deg, var(--violet), #8a35d8 60%, var(--pink));
+  color: #fff; width: 100%; padding: .9rem 1rem; font-size: 1.05rem;
+  box-shadow: 0 8px 20px rgba(91, 43, 217, .35);
+}
+.btn-primary:hover { box-shadow: 0 10px 26px rgba(91, 43, 217, .5); }
+.btn-auto { width: auto; padding: .7rem 1.4rem; font-size: 1rem; }
+.btn-soft { background: var(--soft); color: var(--violet-dark); padding: .5rem .95rem; font-size: .9rem; }
+.btn-soft:hover { border-color: var(--violet); }
+.btn-danger { color: var(--danger); }
+.btn-danger:hover { border-color: var(--danger); }
+.btn-dark { background: var(--ink); color: #fff; padding: .5rem 1.1rem; font-size: .9rem; }
+.btn-dark:hover { background: #2e2063; }
+
+/* Thank you */
+.thanks { text-align: center; padding: 2.5rem 1.75rem; position: relative; }
+.thanks[hidden] { display: none; }
+.thanks p { color: var(--muted); margin: 0 auto 1.5rem; max-width: 40ch; }
+.thanks h2 { margin-bottom: .5rem; }
+.thanks-badge {
+  width: 5rem; height: 5rem; margin: 0 auto 1rem; border-radius: 50%;
+  display: grid; place-items: center; color: #fff;
+  font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: 2.6rem;
+  background: linear-gradient(135deg, var(--pink), var(--violet));
+  box-shadow: 0 8px 22px rgba(91, 43, 217, .45);
+  animation: badgePop .6s ease;
+}
+.thanks-stars { color: var(--gold); font-size: 1.5rem; letter-spacing: .15rem; margin-bottom: .6rem; text-shadow: 0 0 10px rgba(255, 197, 49, .6); }
+.thanks-stars .off { color: var(--star-off); text-shadow: none; }
+
+/* Organiser lock box */
+.lock-box {
+  display: flex; align-items: center; gap: 1rem; width: 100%; text-align: left;
+  font: inherit; color: #fff; cursor: pointer;
+  background: rgba(29, 20, 66, .55);
+  border: 2px dashed rgba(255, 255, 255, .55);
+  border-radius: var(--radius); padding: 1.15rem 1.4rem;
+  backdrop-filter: blur(6px);
+  transition: background .15s, border-color .15s, transform .1s;
+}
+.lock-box:hover { background: rgba(29, 20, 66, .75); border-color: #fff; }
+.lock-box:active { transform: scale(.995); }
+.lock-icon { flex: none; color: var(--gold); }
+.lock-text { display: grid; }
+.lock-text strong { font-family: "Bricolage Grotesque", sans-serif; font-size: 1.3rem; font-weight: 600; }
+.lock-text span { font-size: .92rem; color: #e1d7ff; }
+
+/* Dashboard */
+.dashboard { display: grid; gap: 1.25rem; }
+.dashboard[hidden], .lock-box[hidden] { display: none; }
+.dash-head {
+  display: flex; flex-wrap: wrap; gap: .75rem 1rem; align-items: center; justify-content: space-between;
+  color: #fff;
+}
+.dash-head h2 { font-size: 1.5rem; font-weight: 600; text-shadow: 0 2px 10px rgba(0, 0, 0, .25); }
+.dash-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+
+.panel-head { display: flex; flex-wrap: wrap; gap: .75rem 1rem; justify-content: space-between; align-items: center; margin-bottom: 1.1rem; }
+.count {
+  display: inline-block; min-width: 1.7rem; text-align: center;
+  background: var(--soft); color: var(--violet); border-radius: 999px;
+  font-size: .85rem; padding: .05rem .55rem; margin-left: .3rem;
+  font-family: "Work Sans", sans-serif; font-weight: 600; vertical-align: middle;
+}
+.filter-inline { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.filter-inline label { margin: 0; font-size: .85rem; color: var(--muted); font-weight: 500; }
+.filter-inline select { width: auto; padding: .4rem .6rem; font-size: .9rem; max-width: 100%; border-radius: 10px; }
+
+.summary { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 1.75rem; align-items: center; }
+.avg { text-align: center; padding: 1.1rem .5rem; background: var(--soft); border-radius: 16px; }
+.avg-num { display: block; font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: 3.6rem; line-height: 1; color: var(--violet); }
+.avg-stars { display: block; font-size: 1.25rem; letter-spacing: .1rem; margin: .4rem 0 .2rem; color: var(--gold); }
+.avg-stars .off { color: var(--star-off); }
+.avg-meta { font-size: .85rem; color: var(--muted); }
+
+.dist { display: grid; gap: .6rem; }
+.dist-row { display: grid; grid-template-columns: 3.4rem minmax(0, 1fr) 4.6rem; gap: .65rem; align-items: center; font-size: .9rem; }
+.dist-label { font-weight: 600; white-space: nowrap; }
+.dist-track { height: 14px; background: var(--soft); border-radius: 999px; overflow: hidden; }
+.dist-bar { height: 100%; background: linear-gradient(90deg, var(--violet), var(--pink)); border-radius: 999px; width: 0; transition: width .5s ease; }
+.dist-num { color: var(--muted); text-align: right; white-space: nowrap; }
+
+/* Feed */
+.feed { list-style: none; margin: 0; padding: 0; display: grid; gap: .85rem; }
+.item { border: 2px solid var(--line); border-left: 6px solid var(--violet); border-radius: 14px; padding: 1rem 1.1rem; background: #fff; }
+.item-top { display: flex; justify-content: space-between; gap: .75rem; align-items: flex-start; }
+.item-event { font-weight: 600; margin: 0; overflow-wrap: anywhere; }
+.item-stars { color: var(--gold); letter-spacing: .08rem; white-space: nowrap; }
+.item-stars .off { color: var(--star-off); }
+.item-comment { margin: .5rem 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+.item-foot { display: flex; justify-content: space-between; gap: .75rem; align-items: center; font-size: .85rem; color: var(--muted); flex-wrap: wrap; }
+.tag { display: inline-block; background: var(--soft); border-radius: 999px; padding: .05rem .6rem; font-size: .78rem; margin-left: .4rem; }
+.delete { font: inherit; font-size: .85rem; background: none; border: 0; color: var(--danger); cursor: pointer; padding: .15rem .3rem; border-radius: 4px; text-decoration: underline; }
+.delete:hover { background: #fbe9ea; }
+.empty { text-align: center; color: var(--muted); padding: 2rem 1rem; border: 2px dashed var(--line); border-radius: 14px; }
+.empty strong { display: block; color: var(--ink); margin-bottom: .25rem; }
+
+/* PIN dialog */
+dialog {
+  border: 0; border-radius: var(--radius); padding: 1.75rem; width: min(380px, calc(100% - 2rem));
+  color: var(--ink); box-shadow: 0 20px 60px rgba(0, 0, 0, .45);
+}
+dialog::backdrop { background: rgba(20, 10, 55, .65); backdrop-filter: blur(4px); }
+dialog h2 { font-size: 1.4rem; font-weight: 600; }
+.pin-help { color: var(--muted); margin: .3rem 0 1rem; }
+#pinInput { font-size: 1.4rem; letter-spacing: .4rem; text-align: center; }
+.pin-actions { display: flex; justify-content: flex-end; gap: .6rem; margin-top: 1.2rem; }
+dialog.shake { animation: shake .4s; }
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-9px); }
+  75% { transform: translateX(9px); }
+}
+
+/* Toast + footer */
+.toast {
+  position: fixed; left: 50%; bottom: 1.25rem; transform: translate(-50%, 160%);
+  background: var(--ink); color: #fff; padding: .75rem 1.2rem; border-radius: 12px;
+  box-shadow: var(--shadow); transition: transform .25s ease; z-index: 200; max-width: calc(100% - 2rem);
+}
+.toast.show { transform: translate(-50%, 0); }
+.site-footer { padding: 1.5rem 0 2.5rem; color: #d9ccff; font-size: .88rem; text-align: center; }
+
+/* Responsive */
+@media (max-width: 560px) {
+  .card { padding: 1.25rem; }
+  .summary { grid-template-columns: 1fr; }
+  .stars label { font-size: 2.6rem; }
+  .hero { padding-top: 2.25rem; }
+  .rating-badge { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+</style>
+<body>
+  <a class="skip" href="#feedback-form">Skip to feedback form</a>
+
+  <header class="hero">
+    <div class="wrap">
+      <h1>How was the workshop?</h1>
+      <p class="tagline">Rate it, tell us what worked and what didn't. It takes under a minute.</p>
+    </div>
+  </header>
+
+  <main class="wrap main">
+
+    <!-- ============ PARTICIPANT FORM ============ -->
+    <section class="card" id="formCard" aria-labelledby="form-title">
+      <h2 id="form-title">Share your feedback</h2>
+
+      <form id="feedback-form" novalidate>
+        <div class="field">
+          <label for="eventName">Workshop name <span class="req" aria-hidden="true">*</span></label>
+          <input type="text" id="eventName" name="eventName" list="eventList"
+                 placeholder="e.g. Intro to JavaScript" maxlength="60" autocomplete="off" required>
+          <datalist id="eventList">
+            <option value="Intro to JavaScript"></option>
+            <option value="Git & GitHub Basics"></option>
+            <option value="Responsive Web Design"></option>
+            <option value="Introduction to quantum world with AI"></option>
+            <option value="Claude and it use for students"></option>
+           <option value="Greenpulse worskshop"></option>
+            
+          </datalist>
+          <p class="error" id="eventName-error" role="alert"></p>
+        </div>
+
+        <div class="field">
+          <label for="participant">Your name <span class="req" id="nameReq" aria-hidden="true">*</span></label>
+          <input type="text" id="participant" name="participant"
+                 placeholder="e.g. Asha Verma" maxlength="40" autocomplete="off">
+          <p class="error" id="participant-error" role="alert"></p>
+          <label class="check">
+            <input type="checkbox" id="anonymous">
+            <span>Submit anonymously (name not required)</span>
+          </label>
+        </div>
+
+        <fieldset class="field rating-field">
+          <legend>Your rating <span class="req" aria-hidden="true">*</span></legend>
+          <div class="rating-row">
+            <div class="stars" id="stars">
+              <input type="radio" name="rating" id="r5" value="5"><label for="r5" title="5 – Excellent"><span class="sr">5 stars, excellent</span></label>
+              <input type="radio" name="rating" id="r4" value="4"><label for="r4" title="4 – Good"><span class="sr">4 stars, good</span></label>
+              <input type="radio" name="rating" id="r3" value="3"><label for="r3" title="3 – Average"><span class="sr">3 stars, average</span></label>
+              <input type="radio" name="rating" id="r2" value="2"><label for="r2" title="2 – Poor"><span class="sr">2 stars, poor</span></label>
+              <input type="radio" name="rating" id="r1" value="1"><label for="r1" title="1 – Very poor"><span class="sr">1 star, very poor</span></label>
+            </div>
+            <div class="rating-badge" id="ratingBadge" aria-live="polite">
+              <span class="rb-num" id="rbNum">0</span>
+              <span class="rb-word" id="rbWord">Tap a star</span>
+            </div>
+          </div>
+          <p class="error" id="rating-error" role="alert"></p>
+        </fieldset>
+
+        <div class="field">
+          <label for="comments">Your comments <span class="req" aria-hidden="true">*</span></label>
+          <div class="chips" id="chips" aria-label="Quick comment starters">
+            <button type="button" class="chip" data-text="Great content.">Great content</button>
+            <button type="button" class="chip" data-text="Clear explanations.">Clear explanations</button>
+            <button type="button" class="chip" data-text="Too fast for me.">Too fast</button>
+            <button type="button" class="chip" data-text="Needed more hands-on practice.">More practice</button>
+          </div>
+          <textarea id="comments" name="comments" rows="5" maxlength="300"
+                    placeholder="Write what you liked, what confused you, and what the organisers should change next time..."></textarea>
+          <div class="field-foot">
+            <p class="error" id="comments-error" role="alert"></p>
+            <span class="counter" id="counter">0 / 300</span>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Submit feedback</button>
+      </form>
+    </section>
+
+    <!-- ============ THANK YOU ============ -->
+    <section class="card thanks" id="thanksCard" hidden aria-live="polite">
+      <div class="thanks-badge" id="thanksBadge">5</div>
+      <h2 id="thanksTitle">Thank you!</h2>
+      <p id="thanksText">Your feedback was sent to the organisers.</p>
+      <button type="button" class="btn btn-primary" id="againBtn">Give another response</button>
+    </section>
+
+    <!-- ============ ORGANISER AREA ============ -->
+    <button type="button" class="lock-box" id="openLock" aria-haspopup="dialog">
+      <svg class="lock-icon" viewBox="0 0 24 24" width="30" height="30" aria-hidden="true">
+        <path fill="currentColor" d="M17 9h-1V7a4 4 0 0 0-8 0v2H7a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2Zm-7-2a2 2 0 1 1 4 0v2h-4V7Zm2 10a2 2 0 1 1 0-4 2 2 0 0 1 0 4Z"/>
+      </svg>
+      <span class="lock-text">
+        <strong>Summary</strong>
+        <span>Organisers only. Click and enter the PIN to view ratings and feedback.</span>
+      </span>
+    </button>
+
+    <section class="dashboard" id="dashboard" hidden aria-labelledby="dash-title">
+      <div class="dash-head">
+        <h2 id="dash-title">Organiser dashboard</h2>
+        <div class="dash-actions">
+          <button type="button" class="btn btn-soft" id="loadSample">Load sample data</button>
+          <button type="button" class="btn btn-soft btn-danger" id="clearAll">Clear all</button>
+          <button type="button" class="btn btn-dark" id="lockBtn">Lock</button>
+        </div>
+      </div>
+
+      <section class="card" aria-labelledby="summary-title">
+        <div class="panel-head">
+          <h3 id="summary-title">Rating summary</h3>
+          <div class="filter-inline">
+            <label for="eventFilter">Workshop</label>
+            <select id="eventFilter"></select>
+          </div>
+        </div>
+
+        <div class="summary">
+          <div class="avg" aria-live="polite">
+            <span class="avg-num" id="avgNum">–</span>
+            <span class="avg-stars" id="avgStars" aria-hidden="true"></span>
+            <span class="avg-meta" id="avgMeta">No ratings yet</span>
+          </div>
+          <div class="dist" id="dist" aria-label="Rating distribution"></div>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="list-title">
+        <div class="panel-head">
+          <h3 id="list-title">Submitted feedback <span class="count" id="listCount">0</span></h3>
+          <div class="filter-inline">
+            <label for="ratingFilter">Show</label>
+            <select id="ratingFilter">
+              <option value="all">All ratings</option>
+              <option value="5">5 stars</option>
+              <option value="4">4 stars</option>
+              <option value="3">3 stars</option>
+              <option value="2">2 stars</option>
+              <option value="1">1 star</option>
+            </select>
+            <label for="sortBy" class="sr">Sort</label>
+            <select id="sortBy">
+              <option value="new">Newest first</option>
+              <option value="high">Highest rated</option>
+              <option value="low">Lowest rated</option>
+            </select>
+          </div>
+        </div>
+        <ul class="feed" id="feed"></ul>
+      </section>
+    </section>
+  </main>
+
+  <footer class="site-footer wrap">
+    <p>Data is saved in your browser only (localStorage). Use fictional names and details.</p>
+  </footer>
+
+  <!-- ============ PIN DIALOG ============ -->
+  <dialog id="pinDialog" aria-labelledby="pinTitle">
+    <form id="pinForm" novalidate>
+      <h2 id="pinTitle">Organiser access</h2>
+      <p class="pin-help">Enter the organiser PIN to view the summary.</p>
+      <label for="pinInput" class="sr">Organiser PIN</label>
+      <input type="password" id="pinInput" inputmode="numeric" autocomplete="off" maxlength="8" placeholder="Enter PIN">
+      <p class="error" id="pinError" role="alert"></p>
+      <div class="pin-actions">
+        <button type="button" class="btn btn-soft" id="pinCancel">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-auto">Unlock</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
